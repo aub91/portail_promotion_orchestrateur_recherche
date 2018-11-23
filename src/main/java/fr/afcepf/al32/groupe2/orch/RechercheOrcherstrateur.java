@@ -23,8 +23,9 @@ import fr.afcepf.al32.groupe2.ws.dto.SearchByCategoryResponseDto;
 import fr.afcepf.al32.groupe2.ws.dto.SearchByKeywordsResponseDto;
 import fr.afcepf.al32.groupe2.ws.dto.SearchByShopResponseDto;
 import fr.afcepf.al32.groupe2.ws.dto.ShopDto;
+
 @RestController
-@RequestMapping(value="/orch", headers="Accept=application/json")
+@RequestMapping(value = "/orch", headers = "Accept=application/json")
 public class RechercheOrcherstrateur {
 
 	private RestTemplate restTemplate;
@@ -83,14 +84,23 @@ public class RechercheOrcherstrateur {
 		} else if (null == mots && (null != id || id != 0l)) {
 			listeFinale = traitementByCategory(id, adresseValide, promotionDtosbyGeoRecherche);
 		} else if (null != mots && (null != id || id != 0l)) {
-			// TODO recherche des deux
-
+			listeFinale = traitementByCategoryEtMotCles(id, mots, adresseValide, promotionDtosbyGeoRecherche);
 		} else if (null != mots && (null == id || id == 0l)) {
 			listeFinale = traitementByKeyWords(mots, adresseValide, promotionDtosbyGeoRecherche);
-
 		} else {
 			System.out.println("cas pas g�r�");
 		}
+
+		return listeFinale;
+	}
+
+	private List<PromotionDto> traitementByCategoryEtMotCles(Long id, List<String> mots, boolean adresseValide,
+			List<PromotionDto> promotionDtosbyGeoRecherche) {
+
+		List<PromotionDto> listeFinale = traitementByCategory(id, adresseValide, promotionDtosbyGeoRecherche);
+		List<PromotionDto> listeMots = traitementByKeyWords(mots, adresseValide, promotionDtosbyGeoRecherche);
+		listeMots.retainAll(promotionDtosbyGeoRecherche);
+		listeFinale.retainAll(listeMots);
 
 		return listeFinale;
 	}
@@ -123,11 +133,12 @@ public class RechercheOrcherstrateur {
 			List<PromotionDto> promotionDtosbyGeoRecherche) {
 		List<PromotionDto> listeFinale = null;
 
-		String requestJson = base_url_recherche + "/byCategory" + id;
+		String url_byCategory = base_url_recherche + "/byCategory";
+		String requestJson = id.toString();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<String> entity = new HttpEntity<String>(requestJson, headers);
-		SearchByCategoryResponseDto searchByCategoryResponseDto = restTemplate.postForObject(requestJson, entity,
+		SearchByCategoryResponseDto searchByCategoryResponseDto = restTemplate.postForObject(url_byCategory, entity,
 				SearchByCategoryResponseDto.class);
 		listeFinale = searchByCategoryResponseDto.getPromotionsDto();
 		if (adresseValide) {
@@ -139,16 +150,23 @@ public class RechercheOrcherstrateur {
 	private List<PromotionDto> traitementByKeyWords(List<String> mots, boolean adresseValide,
 			List<PromotionDto> promotionDtosbyGeoRecherche) {
 		List<PromotionDto> listeFinale;
+		ObjectMapper mapper = new ObjectMapper();
 
-		StringJoiner joiner = new StringJoiner(",");
-		for (String mot : mots) {
-			joiner.add(mot);
-		}
-		String requestJson = base_url_recherche + "/byKeywords" + "[" + joiner.toString() + "]";
+		StringJoiner joiner = new StringJoiner(",", "[", "]");
+		mots.stream().map(mot -> {
+			try {
+				return mapper.writeValueAsString(mot);
+			} catch (JsonProcessingException e) {
+				return "";
+			}
+		}).forEach(joiner::add);
+
+		String url_Keywords = base_url_recherche + "/byKeywords";
+		String requestJson = joiner.toString();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<String> entity = new HttpEntity<String>(requestJson, headers);
-		SearchByKeywordsResponseDto searchByKeywordsResponseDto = restTemplate.postForObject(requestJson, entity,
+		SearchByKeywordsResponseDto searchByKeywordsResponseDto = restTemplate.postForObject(url_Keywords, entity,
 				SearchByKeywordsResponseDto.class);
 		listeFinale = searchByKeywordsResponseDto.getPromotionsDto();
 		if (adresseValide) {
