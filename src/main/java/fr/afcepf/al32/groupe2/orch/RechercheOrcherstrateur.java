@@ -66,10 +66,6 @@ public class RechercheOrcherstrateur {
 		
 		
 
-		else {
-			System.out.println("cas pas géré");
-		}
-
 		return null;
 	}
 
