@@ -66,7 +66,7 @@ public class RechercheOrchestrateur {
 			String urlValidation = base_url_validationGeo + "?source=" + source;
 			ResponseGeoApiDto geoApiDto = restTemplate.getForObject(urlValidation, ResponseGeoApiDto.class);
 
-			adresseValide = geoApiDto.getStatus() == "OK";
+			adresseValide = geoApiDto.getStatus().equals("OK");
 			if (adresseValide) {
 				String urlRecherche = base_url_rechercheGeo + "?source=" + source + "&perimetre=" + perimetre;
 				responseWsDto = restTemplate.getForObject(urlRecherche, ResponseWsDto.class);
@@ -83,7 +83,7 @@ public class RechercheOrchestrateur {
 			listeFinale = traitementByKeyWords(mots, adresseValide, promotionDtosbyGeoRecherche);
 		}
 
-		return new OrchestratorResearchDtoResponse(categoryId, mots, source, perimetre, listeFinale);
+		return new OrchestratorResearchDtoResponse(categoryId, mots, source, perimetre, listeFinale, adresseValide);
 	}
 
 	private List<PromotionDto> traitementByCategoryEtMotCles(Long id, List<String> mots, boolean adresseValide,
